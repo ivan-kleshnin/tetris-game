@@ -15,10 +15,6 @@ let assign = curry((a, b) => {
   return Object.assign({}, b, a);
 });
 
-let assign = curry((a, b) => {
-  return Object.assign({}, b, a);
-});
-
 function randomArrayItem(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
