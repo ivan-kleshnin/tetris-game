@@ -17,7 +17,7 @@
     "classnames": "^2.1.2",
     "cyclejs": "^0.22.0",
     "cyclejs-stream": "^0.4.3",
-    "deep-extend": "^0.4.0",
+    "deep-merge": "^1.0.0",
     "jsx-webpack-loader": "^0.1.2",
     "lodash.debounce": "^3.1.0",
     "lodash.result": "^3.1.2",

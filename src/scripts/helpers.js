@@ -1,9 +1,18 @@
 import {curry, keys} from "ramda";
-import deepExtend from "deep-extend";
+import DeepMerge from "deep-merge";
 
 // HELPERS =========================================================================================
+// Workaround until https://github.com/ramda/ramda/issues/1073 (wait for release) //////////////////
+let doMerge = DeepMerge((a, b, key) => {
+  return b;
+});
+
 let merge = curry((a, b) => {
-  return deepExtend(b, a);
+  return doMerge(b, a);
+});
+
+let assign = curry((a, b) => {
+  return Object.assign({}, b, a);
 });
 
 let assign = curry((a, b) => {
@@ -23,6 +32,6 @@ function randomObjectValue(obj) {
 }
 
 export default {
-  merge,
+  merge, assign,
   randomArrayItem, randomObjectKey, randomObjectValue
 }
