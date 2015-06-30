@@ -1,4 +1,4 @@
-import {assoc, clone, evolve, identity, map, pipe, reduce, repeat, range, trim} from "ramda";
+import {assoc, clone, eqDeep, identity, map, pipe, reduce, repeat, range, trim} from "ramda";
 import Class from "classnames";
 import Cycle from "cyclejs";
 import Stream from "cyclejs-stream";
@@ -41,7 +41,10 @@ const DRAW_MAP = {
  "G": "\u2B1B",
 };
 
-//let randomObjectValue2 = (PIECES) => PIECES.O;
+const COLLAPSE_FRAMES$ = Observable
+  .for(["previous", "cleared", "previous", "cleared", "current"], (v, i) => Observable.return(v).delay(i * 50));
+
+//let randomObjectValue = (PIECES) => PIECES.O;
 
 // APP =============================================================================================
 function Intent(interactions) {
@@ -63,6 +66,9 @@ function Model(intentions) {
     return {
       // Game board
       board: Board.create(BOARD_ROWS, BOARD_COLS),
+
+      // Board to collapse
+      collapseBoard: undefined,
 
       // Current piece
       piece: randomObjectValue(PIECES),
@@ -87,8 +93,8 @@ function Model(intentions) {
 
   // GAME EVENTS
   let moveLeft$ = intentions.hitLeftArrow$.map(() => {
-    return function (state) {
-      if (state.live && !state.paused) {
+    return function moveLeft(state) {
+      if (isTicking(state)) {
         let [cx, cy] = state.position;
         let newPosition = [cx - 1, cy];
         if (Board.doesPieceFit(state.board, state.piece, newPosition)) {
@@ -100,8 +106,8 @@ function Model(intentions) {
   });
 
   let moveRight$ = intentions.hitRightArrow$.map(() => {
-    return function (state) {
-      if (state.live && !state.paused) {
+    return function moveRight(state) {
+      if (isTicking(state)) {
         let [cx, cy] = state.position;
         let newPosition = [cx + 1, cy];
         if (Board.doesPieceFit(state.board, state.piece, newPosition)) {
@@ -113,8 +119,8 @@ function Model(intentions) {
   });
 
   let rotate$ = intentions.hitUpArrow$.map(() => {
-    return function (state) {
-      if (state.live && !state.paused) {
+    return function rotate(state) {
+      if (isTicking(state)) {
         let rotatedPiece = Piece.rotate(state.piece);
         if (Board.doesPieceFit(state.board, rotatedPiece, state.position)) {
           state = assoc("piece", rotatedPiece, state);
@@ -125,8 +131,8 @@ function Model(intentions) {
   });
 
   let drop$ = intentions.hitSpace$.map(() => {
-    return function (state) {
-      if (state.live && !state.paused) {
+    return function drop(state) {
+      if (isTicking(state)) {
         let dropPosition = Board.getDropPosition(state.board, state.piece, state.position);
         state = merge({
           board: Board.writePiece(state.board, state.piece, dropPosition),
@@ -139,7 +145,7 @@ function Model(intentions) {
   });
 
   let pause$ = intentions.hitEnter$.map(() => {
-    return function (state) {
+    return function pause(state) {
       state = assoc("paused", !state.paused, state);
       return state;
     }
@@ -151,7 +157,7 @@ function Model(intentions) {
   let tick$ = Observable.interval(TICK_MS).pausable(ticking$);
 
   let gravity$ = tick$.map(() => {
-    return function (state) {
+    return function gravity(state) {
       let [cx, cy] = state.position;
       let newPosition = [cx, cy + 1];
       if (Board.doesPieceFit(state.board, state.piece, newPosition)) {
@@ -168,18 +174,21 @@ function Model(intentions) {
   });
 
   let maybeCollapse$ = Observable.merge(drop$, gravity$).map(() => {
-    return function (state) {
+    return function maybeCollapse(state) {
       let filledRowIndexes = Board.getFilledRowIndexes(state.board);
       if (filledRowIndexes.length) {
         let newBoard = Board.collapseFilledRows(state.board);
-        state = assoc("board", newBoard, state);
+        state = merge({
+          board: newBoard,
+          collapseBoard: state.board,
+        }, state);
       }
       return state;
-    }
+    };
   });
 
   let maybeEnd$ = Observable.merge(drop$, gravity$).map(() => {
-    return function (state) {
+    return function maybeEnd(state) {
       if (state.live && !state.paused) {
         if (state.piece == undefined) {
           let nextPiece = randomObjectValue(PIECES);
@@ -204,25 +213,73 @@ function Model(intentions) {
     };
   });
 
+  let cleanup$ = new Subject();
+
   let transform$ = Rx.Observable.merge(
-    // Controllable
+    // Controlled by a Player
     pause$, moveLeft$, moveRight$, rotate$, drop$,
 
-    // Uncontrollable
-    gravity$, maybeCollapse$, maybeEnd$
+    // Not controlled by a Player
+    gravity$, maybeCollapse$, maybeEnd$, cleanup$
   );
 
   let state$ = transform$
     .startWith(seedState())
     .scan((state, transform) => transform(state))
-    .distinctUntilChanged()
+    .distinctUntilChanged(identity, eqDeep)
     .shareReplay(1);
 
   state$.subscribe(state => {
     ticking$.onNext(isTicking(state));
   });
 
-  return {state$};
+  let collapse$ = state$.filter(state => state.collapseBoard);
+
+  let collapseAnimation$ = collapse$
+    .flatMap(() => COLLAPSE_FRAMES$)
+    .shareReplay(1);
+
+  let animatedState$ = state$.combineLatest(collapseAnimation$.startWith("current"), (state, animationFrame) => {
+    if (state.collapseBoard) {
+      if (animationFrame == "previous") {
+        return assoc("board", state.collapseBoard, state);
+      } else if (animationFrame == "cleared") {
+        return assoc("board", Board.clearFilledRows(state.collapseBoard), state);
+      } else {
+        return state;
+      }
+    } else {
+      return state;
+    }
+  });
+
+  collapseAnimation$
+    .distinctUntilChanged()
+    .subscribe(() => {
+      ticking$.onNext(false);
+  });
+
+  collapseAnimation$
+    .filter(animationFrame => animationFrame == "current")
+    .subscribe(collapseAnimationEnd => {
+      if (collapseAnimationEnd) {
+        ticking$.onNext(true);
+        cleanup$.onNext(function forgotCollapse(state) {
+          return assoc("collapseBoard", undefined, state);
+        });
+      }
+  });
+
+  let visualState$ = animatedState$.map(state => {
+    return merge(state, {
+      primaryBoard: Board.drawPiece(state.board, state.piece, state.position),
+      secondaryBoard: Board.drawPiece(Board.create(2, 4), state.nextPiece, [1, 1]),
+    });
+  });
+
+  return {
+    state$: visualState$
+  };
 }
 
 function View(state) {
@@ -239,15 +296,10 @@ function View(state) {
     )(board);
   }
 
-  return state.state$.map(({board, piece, nextPiece, position, live, paused}) =>  {
-    let primaryBoard = board;
-    let secondaryBoard = Board.create(2, 4);
-    let primaryBoardWithPiece = Board.drawPiece(primaryBoard, piece, position);
-    let secondaryBoardWithPiece = Board.drawPiece(secondaryBoard, nextPiece, [1, 1]);
-
+  return state.state$.map((state) =>  {
     let status;
-    if (live) {
-      if (paused) {
+    if (state.live) {
+      if (state.paused) {
         status = <p>Paused!</p>;
       } else {
         status = <p>Running!</p>;
@@ -262,7 +314,7 @@ function View(state) {
         }}>
           <pre>
             <code>
-              {renderBoard(primaryBoardWithPiece)}
+              {renderBoard(state.primaryBoard)}
             </code>
           </pre>
           {status}
@@ -272,7 +324,7 @@ function View(state) {
         }}>
           <pre>
             <code>
-              {renderBoard(secondaryBoardWithPiece)}
+              {renderBoard(state.secondaryBoard)}
             </code>
           </pre>
         </div>
