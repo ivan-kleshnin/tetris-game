@@ -1,19 +1,28 @@
-import {keys} from "ramda";
-import DeepMerge from "deep-merge";
+import {curry, keys} from "ramda";
+import deepExtend from "deep-extend";
 
 // HELPERS =========================================================================================
-export const merge = DeepMerge((a, b, key) => {
-  return b;
+let merge = curry((a, b) => {
+  return deepExtend(b, a);
 });
 
-export function randomArrayItem(array) {
+let assign = curry((a, b) => {
+  return Object.assign({}, b, a);
+});
+
+function randomArrayItem(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-export function randomObjectKey(obj) {
+function randomObjectKey(obj) {
   return randomArrayItem(keys(obj));
 }
 
-export function randomObjectValue(obj) {
+function randomObjectValue(obj) {
   return obj[randomObjectKey(obj)];
+}
+
+export default {
+  merge,
+  randomArrayItem, randomObjectKey, randomObjectValue
 }

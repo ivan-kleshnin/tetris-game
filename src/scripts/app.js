@@ -113,11 +113,11 @@ function Model(intentions) {
     return function (state) {
       if (state.live && !state.paused) {
         let dropPosition = Board.getDropPosition(state.board, state.piece, state.position);
-        state = merge(state, {
+        state = merge({
           board: Board.writePiece(state.board, state.piece, dropPosition),
           piece: undefined,
           position: INITIAL_POSITION
-        });
+        }, state);
       }
       return state;
     }
@@ -142,11 +142,11 @@ function Model(intentions) {
       if (Board.doesPieceFit(state.board, state.piece, newPosition)) {
         state = assoc("position", newPosition, state);
       } else {
-        state = merge(state, {
+        state = merge({
           board: Board.writePiece(state.board, state.piece, state.position),
           piece: undefined,
           position: INITIAL_POSITION
-        });
+        }, state);
       }
       return state;
     }
@@ -170,18 +170,18 @@ function Model(intentions) {
           let nextPiece = randomObjectValue(PIECES);
           if (Board.doesPieceFit(state.board, nextPiece, INITIAL_POSITION)) {
             // Game continues with next piece
-            state = merge(state, {
+            state = merge({
               piece: state.nextPiece,
               nextPiece: randomObjectValue(PIECES),
               position: INITIAL_POSITION
-            });
+            }, state);
           } else {
             // Game over
-            state = merge(state, {
+            state = merge({
               piece: undefined,
               position: INITIAL_POSITION,
               live: false
-            });
+            }, state);
           }
         }
       }
