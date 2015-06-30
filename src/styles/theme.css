@@ -1,6 +1,19 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   position: absolute;
   width: 100%;
   height: 100%;
   padding: 2em;
+}
+
+pre {
+  background: whitesmoke;
 }
