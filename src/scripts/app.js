@@ -1,7 +1,6 @@
 import {assoc, clone, eqDeep, identity, map, pipe, reduce, repeat, range, trim} from "ramda";
 import Class from "classnames";
 import Cycle from "cyclejs";
-import Stream from "cyclejs-stream";
 import {merge, randomObjectValue} from "./helpers";
 import Piece from "./piece";
 import Board from "./board";
