@@ -96,7 +96,7 @@ function Model(intentions) {
         }
       }
       return state;
-    }
+    };
   });
 
   let moveRight$ = intentions.hitRightArrow$.map(() => {
@@ -109,19 +109,19 @@ function Model(intentions) {
         }
       }
       return state;
-    }
+    };
   });
 
   let rotate$ = intentions.hitUpArrow$.map(() => {
     return function (state) {
       if (state.live && !state.paused) {
-        let rotatedPiece = Piece.rotateClockwise(state.piece);
+        let rotatedPiece = Piece.rotate(state.piece);
         if (Board.doesPieceFit(state.board, rotatedPiece, state.position)) {
           state = assoc("piece", rotatedPiece, state);
         }
       }
       return state;
-    }
+    };
   });
 
   let drop$ = intentions.hitSpace$.map(() => {
@@ -135,7 +135,7 @@ function Model(intentions) {
         }, state);
       }
       return state;
-    }
+    };
   });
 
   let pause$ = intentions.hitEnter$.map(() => {
