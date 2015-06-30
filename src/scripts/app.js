@@ -145,10 +145,10 @@ function Model(intentions) {
     }
   });
 
-  let tickRunning$ = new Subject();
-  tickRunning$.distinctUntilChanged();
+  let ticking$ = new Subject();
+  ticking$.distinctUntilChanged();
 
-  let tick$ = Observable.interval(TICK_MS).pausable(tickRunning$).take(30);
+  let tick$ = Observable.interval(TICK_MS).pausable(ticking$);
 
   let gravity$ = tick$.map(() => {
     return function (state) {
@@ -164,10 +164,10 @@ function Model(intentions) {
         }, state);
       }
       return state;
-    }
+    };
   });
 
-  let collapse$ = Observable.merge(drop$, gravity$).map(() => {
+  let maybeCollapse$ = Observable.merge(drop$, gravity$).map(() => {
     return function (state) {
       let filledRowIndexes = Board.getFilledRowIndexes(state.board);
       if (filledRowIndexes.length) {
@@ -178,7 +178,7 @@ function Model(intentions) {
     }
   });
 
-  let destiny$ = Observable.merge(drop$, gravity$).map(() => {
+  let maybeEnd$ = Observable.merge(drop$, gravity$).map(() => {
     return function (state) {
       if (state.live && !state.paused) {
         if (state.piece == undefined) {
@@ -201,7 +201,7 @@ function Model(intentions) {
         }
       }
       return state;
-    }
+    };
   });
 
   let transform$ = Rx.Observable.merge(
@@ -209,7 +209,7 @@ function Model(intentions) {
     pause$, moveLeft$, moveRight$, rotate$, drop$,
 
     // Uncontrollable
-    gravity$, collapse$, destiny$
+    gravity$, maybeCollapse$, maybeEnd$
   );
 
   let state$ = transform$
@@ -219,7 +219,7 @@ function Model(intentions) {
     .shareReplay(1);
 
   state$.subscribe(state => {
-    tickRunning$.onNext(isTicking(state));
+    ticking$.onNext(isTicking(state));
   });
 
   return {state$};
