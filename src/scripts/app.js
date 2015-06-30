@@ -10,8 +10,8 @@ let {Rx} = Cycle;
 let {Observable, Subject} = Rx;
 
 // CONSTANTS =======================================================================================
-const BOARD_ROWS = 10; // have to be able to contain PIECES
-const BOARD_COLS = 6; // ...
+const BOARD_ROWS = 12; // have to be able to contain PIECES
+const BOARD_COLS = 8; // ...
 const INITIAL_POSITION = [2, 2]; // TODO evaluate best position (middle of cols, top + 1 of rows?!)
 
 /**
