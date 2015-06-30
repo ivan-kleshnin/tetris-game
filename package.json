@@ -1,13 +1,13 @@
 {
-  "name": "cyclejs-examples",
-  "version": "2.0.0",
-  "main": "backend/scripts/app.js",
+  "name": "tetris-cyclejs",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
     "lint": "eslint .",
     "build": "webpack --config webpack.config-prod.js --progress --colors",
     "dev": "webpack-dev-server --config webpack.config-dev.js --progress --colors --port 2992 --inline",
-    "test": "NODE_ENV=testing mocha --opts specs/mocha.opts specs",
-    "test-watch": "NODE_ENV=testing mocha --opts specs/mocha.opts -w specs"
+    "test": "mocha --opts specs/mocha.opts specs",
+    "test-watch": "mocha --opts specs/mocha.opts -w specs"
   },
   "dependencies": {
     "babel": "^5.4.7",
