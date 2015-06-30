@@ -81,6 +81,10 @@ function Model(intentions) {
     };
   }
 
+  function isTicking(state) {
+    return state.live && !state.paused;
+  }
+
   // GAME EVENTS
   let moveLeft$ = intentions.hitLeftArrow$.map(() => {
     return function (state) {
@@ -215,7 +219,7 @@ function Model(intentions) {
     .shareReplay(1);
 
   state$.subscribe(state => {
-    tickRunning$.onNext(state.live && !state.paused);
+    tickRunning$.onNext(isTicking(state));
   });
 
   return {state$};
