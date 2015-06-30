@@ -61,11 +61,22 @@ function Intent(interactions) {
 function Model(intentions) {
   function seedState() {
     return {
+      // Game board
       board: Board.create(BOARD_ROWS, BOARD_COLS),
+
+      // Current piece
       piece: randomObjectValue(PIECES),
+
+      // Next piece
       nextPiece: randomObjectValue(PIECES),
+
+      // Current position (of current piece)
       position: INITIAL_POSITION,
+
+      // Live state (game is not lost)
       live: true,
+
+      // User pause
       paused: true,
     };
   }
