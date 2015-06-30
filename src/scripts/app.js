@@ -44,6 +44,8 @@ const DRAW_MAP = {
 const COLLAPSE_FRAMES$ = Observable
   .for(["previous", "cleared", "previous", "cleared", "current"], (v, i) => Observable.return(v).delay(i * 50));
 
+const SCORE_PER_ROW = 100;
+
 //let randomObjectValue = (PIECES) => PIECES.O;
 
 // APP =============================================================================================
@@ -84,6 +86,9 @@ function Model(intentions) {
 
       // User pause
       paused: true,
+
+      // User scores
+      scores: 0,
     };
   }
 
@@ -181,6 +186,7 @@ function Model(intentions) {
         state = merge({
           board: newBoard,
           collapseBoard: state.board,
+          scores: state.scores + (SCORE_PER_ROW * filledRowIndexes.length),
         }, state);
       }
       return state;
@@ -322,11 +328,14 @@ function View(state) {
         <div style={{
           float: "left",
         }}>
-          <pre>
-            <code>
-              {renderBoard(state.secondaryBoard)}
-            </code>
-          </pre>
+          <div>
+            <pre>
+              <code>
+                {renderBoard(state.secondaryBoard)}
+              </code>
+            </pre>
+            <div>Scores: {state.scores.toString()}</div>
+          </div>
         </div>
       </div>
     );
