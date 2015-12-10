@@ -5,14 +5,9 @@ Development in progress.
 
 ## Install
 
-1. Download repo manually or with
 ```
 $ wget https://github.com/Paqmind/tetris-cyclejs/archive/master.zip; unzip master.zip -d tetris-cyclejs; rm master.zip
 $ cd tetris-cyclejs
-```
-
-2. From the project folder run
-```
 $ npm install; bin/install
 ```
 
